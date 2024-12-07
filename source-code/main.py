@@ -15,36 +15,23 @@ import analyse
 from test_dataloader import GetLoader
 
 
-
 def run_successful(flag):
     print("*********run " + flag + " OK !!*******")
-
-
-
 
 
 def main(args):
     print(args)
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     print("using {} device.".format(device))
-
-    if args.dataset == 'home':
-        data_root = "./office-home"
-        data_root_s = "./office-home/Art"
-        data_root_t = "./office-home/Clipart"
-        data_root_test = "./office-home/Clipart"
-        n_class = 65
-    elif args.dataset == 'office31':
-        data_root = "./office31"
-        data_root_s = "./office31/amazon"
-        data_root_t = "./office31/dslr"
-        data_root_test = "./office31/dslr"
+    if args.dataset == 'office31':
+        data_root = args.data_root
+        data_root_s = args.data_root_s
+        data_root_t = args.data_root_t
+        data_root_test = args.data_root_t
         n_class = 31
     assert os.path.exists(data_root), "{} path does not exist.".format(data_root)
-
     n_epoch = args.epochs
     batch_size = args.batchsize
-
     train_transform = transforms.Compose(
         [transforms.RandomResizedCrop(224),  # 随机裁剪一个area然后再resize
          transforms.RandomHorizontalFlip(),  # 随机水平翻转
@@ -66,9 +53,6 @@ def main(args):
          transforms.Normalize(mean=[0.485, 0.456, 0.406],
                               std=[0.229, 0.224, 0.225]),
          ])
-
-
-
     source_dataset = GetLoader(dataroot=data_root_s, transforms=train_transform, contra_transforms=contra_transform)
     data_loader_source = torch.utils.data.DataLoader(source_dataset, batch_size=batch_size, shuffle=True,
                                                      drop_last=True, num_workers=8)
@@ -81,26 +65,18 @@ def main(args):
     target_num = target_dataset.n_data
     # source_num = len(source_dataset)
     # target_num = len(target_dataset)
-
     class_list = source_dataset.class_to_idx
     # print(class_list)
     print("using {} images for training, {} images for validation.".format(source_num, target_num))
-
-
     net = resnet50()
     model_weight_path = "./pretrained/resnet34-333f7ec4.pth"
     net.load_state_dict(torch.load(model_weight_path, map_location='cpu'))
     in_channel = net.fc.in_features
     net.fc = nn.Linear(in_channel, 31)
     net.to(device)
-
-
     loss_function = nn.CrossEntropyLoss()
-
-
     params = [p for p in net.parameters() if p.requires_grad]
     optimizer = optim.Adam(params, lr=0.0001)
-
     epochs = n_epoch
     accuracy = []
     best_acc = 0.0
@@ -108,7 +84,6 @@ def main(args):
     train_steps = len(data_loader_source)
     for epoch in range(epochs):
         print("start training epoch ", epoch + 1)
-
         net.train()
         running_loss = 0.0
         train_bar = tqdm(data_loader_source, file=sys.stdout)
@@ -124,7 +99,6 @@ def main(args):
             optimizer.step()
             running_loss += loss.item()
             train_bar.desc = "train epoch[{}/{}] loss:{:.3f}".format(epoch + 1, epochs, loss)
-
         net.eval()
         acc = 0.0
         with torch.no_grad():
@@ -143,12 +117,9 @@ def main(args):
         if val_accurate > best_acc:
             best_acc = val_accurate
             torch.save(net.state_dict(), save_path)
-
     with open("./results/acc.txt", "w") as fp:
         [fp.write(str(item) + '\n') for item in accuracy]
         fp.close()
-
-    analyse.draw_accuracy("./results/acc.txt", epoch, "./results/")
     print("best accuracy is:", best_acc)
     print('Finished Training')
 
