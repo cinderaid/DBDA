@@ -8,10 +8,8 @@ def draw_accuracy(path_txt, epochs, save_path):
     print(data)
     y = data
     x = np.arange(0, epochs, 1)
-
     fig = plt.figure(figsize=[8, 6])
     sub = fig.add_subplot(111)
-
     sub.plot(x, y)
     sub.set_xlabel('Number of Epoches', fontsize=14)
     sub.set_ylabel('Accuracy', fontsize=14)
@@ -28,7 +26,3 @@ def draw_accuracy(path_txt, epochs, save_path):
     res = save_path + "acc.jpg"
     fig.savefig(res, dpi=1000)  # dpi分辨率，默认100
     plt.close('all')
-
-
-def test1():
-    print('1')
